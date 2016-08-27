@@ -35,6 +35,8 @@
 #include "encoder.h"
 #include "eventDevice.h"
 #include "fifo.h"
+#include "gamepad.h"
+#include "gyroSensor.h"
 #include "keys.h"
 #include "led.h"
 #include "lineSensor.h"
@@ -44,6 +46,7 @@
 #include "rangeSensor.h"
 #include "servoMotor.h"
 #include "soundSensor.h"
+#include "tonePlayer.h"
 #include "vectorSensor.h"
 
 #include "mspBusAutoDetector.h"
@@ -71,6 +74,7 @@ Brick::Brick(const trikKernel::DifferentOwnerPointer<trikHal::HardwareAbstractio
 		, const QString &modelConfig
 		, const QString &mediaPath)
 	: mHardwareAbstraction(hardwareAbstraction)
+	, mTonePlayer(new TonePlayer())
 	, mMediaPath(mediaPath)
 	, mConfigurer(systemConfig, modelConfig)
 {
@@ -105,12 +109,16 @@ Brick::Brick(const trikKernel::DifferentOwnerPointer<trikHal::HardwareAbstractio
 	}
 
 	if (mConfigurer.isEnabled("gyroscope")) {
-		mGyroscope.reset(new VectorSensor("gyroscope", mConfigurer, *mHardwareAbstraction));
+		mGyroscope.reset(new GyroSensor("gyroscope", mConfigurer, *mHardwareAbstraction, mAccelerometer.data()));
 	}
 
 	mKeys.reset(new Keys(mConfigurer, *mHardwareAbstraction));
 
 	mLed.reset(new Led(mConfigurer, *mHardwareAbstraction));
+
+	if (mConfigurer.isEnabled("gamepad")) {
+		mGamepad.reset(new Gamepad(mConfigurer, *mHardwareAbstraction));
+	}
 
 	mPlayWavFileCommand = mConfigurer.attributeByDevice("playWavFile", "command");
 	mPlayMp3FileCommand = mConfigurer.attributeByDevice("playMp3File", "command");
@@ -142,6 +150,7 @@ Brick::~Brick()
 	mKeys.reset();
 	mDisplay.reset();
 	mLed.reset();
+	mGamepad.reset();
 }
 
 DisplayWidgetInterface *Brick::graphicsWidget()
@@ -175,6 +184,10 @@ void Brick::reset()
 		mDisplay->reset();
 	}
 
+	if (mGamepad) {
+		mGamepad->reset();
+	}
+
 	/// @todo Temporary, we need more carefully init/deinit range sensors.
 	for (RangeSensor * const rangeSensor : mRangeSensors.values()) {
 		rangeSensor->init();
@@ -204,6 +217,18 @@ void Brick::playSound(const QString &soundFileName)
 	}
 }
 
+
+void Brick::playTone(int hzFreq, int msDuration)
+{
+	QLOG_INFO() << "Playing tone (" << hzFreq << "," << msDuration << ")";
+
+	if (hzFreq < 0 || msDuration < 0)
+		return;
+	// mHardwareAbstraction->systemSound()->playTone(hzFreq, msDuration);
+	// mTonePlayer->play(hzFreq, msDuration);
+	QMetaObject::invokeMethod(mTonePlayer.data(), "play", Q_ARG(int, hzFreq), Q_ARG(int, msDuration));
+}
+
 void Brick::say(const QString &text)
 {
 	QStringList args{"-c", "espeak -v russian_test -s 100 \"" + text + "\""};
@@ -213,6 +238,8 @@ void Brick::say(const QString &text)
 void Brick::stop()
 {
 	QLOG_INFO() << "Stopping brick";
+
+	mTonePlayer->stop();
 
 	for (ServoMotor * const servoMotor : mServoMotors.values()) {
 		servoMotor->powerOff();
@@ -340,7 +367,7 @@ VectorSensorInterface *Brick::accelerometer()
 	return mAccelerometer.data();
 }
 
-VectorSensorInterface *Brick::gyroscope()
+GyroSensorInterface *Brick::gyroscope()
 {
 	return mGyroscope.data();
 }
@@ -385,6 +412,11 @@ LedInterface *Brick::led()
 	return mLed.data();
 }
 
+GamepadInterface *Brick::gamepad()
+{
+	return mGamepad.data();
+}
+
 trikControl::FifoInterface *Brick::fifo(const QString &port)
 {
 	return mFifos[port];
@@ -394,7 +426,7 @@ EventDeviceInterface *Brick::eventDevice(const QString &deviceFile)
 {
 	if (!mEventDevices.contains(deviceFile)) {
 		EventDeviceInterface * const eventDevice = new EventDevice(deviceFile, *mHardwareAbstraction);
-		if (eventDevice->status() != EventDeviceInterface::Status::failure) {
+		if (eventDevice->status() != EventDeviceInterface::Status::permanentFailure) {
 			mEventDevices.insert(deviceFile, eventDevice);
 		}
 	}

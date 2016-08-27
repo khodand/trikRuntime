@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <functional>
+
 #include <QtCore/QObject>
 #include <QtCore/QScopedPointer>
 #include <QtCore/QThread>
@@ -21,7 +23,6 @@
 
 namespace trikNetwork {
 class MailboxInterface;
-class GamepadInterface;
 }
 
 namespace trikControl {
@@ -42,16 +43,17 @@ public:
 	/// Constructor.
 	/// @param brick - reference to trikControl::Brick instance.
 	/// @param mailbox - mailbox object used to communicate with other robots.
-	/// @param gamepad - gamepad object used to interact with TRIK Gamepad on Android device.
 	TrikScriptRunner(trikControl::BrickInterface &brick
 			, trikNetwork::MailboxInterface * const mailbox
-			, trikNetwork::GamepadInterface * const gamepad
 			);
 
 	~TrikScriptRunner() override;
 
 	/// Registers given C++ function as callable from script, with given name.
 	void registerUserFunction(const QString &name, QScriptEngine::FunctionSignature function);
+
+	/// Adds custom initialization steps when creating script engine (useful when used from outside of the TrikRuntime).
+	void addCustomEngineInitStep(const std::function<void (QScriptEngine *)> &step);
 
 public slots:
 	/// Executes given script asynchronously. If some script is already executing, it will be aborted.
@@ -104,6 +106,9 @@ signals:
 
 private slots:
 	void onScriptStart(int scriptId);
+
+	/// Sends message to host machine from mailbox via wifi.
+	void sendMessageFromMailBox(int senderNumber, const QString &message);
 
 private:
 	QScopedPointer<ScriptExecutionControl> mScriptController;

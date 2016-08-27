@@ -22,6 +22,8 @@
 #include "encoderInterface.h"
 #include "eventDeviceInterface.h"
 #include "fifoInterface.h"
+#include "gamepadInterface.h"
+#include "gyroSensorInterface.h"
 #include "keysInterface.h"
 #include "ledInterface.h"
 #include "lineSensorInterface.h"
@@ -65,6 +67,9 @@ public slots:
 	/// Plays given music file on a speaker (in format accepted by aplay or cvlc utilities).
 	virtual void playSound(const QString &soundFileName) = 0;
 
+	/// Generates sound with given frequency and given duration, plays it on a speaker.
+	virtual void playTone(int hzFreq, int msDuration) = 0;
+
 	/// Uses text synthesis to say given text on a speaker.
 	virtual void say(const QString &text) = 0;
 
@@ -96,7 +101,7 @@ public slots:
 	virtual VectorSensorInterface *accelerometer() = 0;
 
 	/// Returns on-board gyroscope.
-	virtual VectorSensorInterface *gyroscope() = 0;
+	virtual GyroSensorInterface *gyroscope() = 0;
 
 	/// Returns high-level line detector sensor using camera on given port (video0 or video1).
 	virtual LineSensorInterface *lineSensor(const QString &port) = 0;
@@ -124,6 +129,9 @@ public slots:
 
 	/// Returns LED control class.
 	virtual LedInterface *led() = 0;
+
+	/// Returns handler for Android gamepad.
+	virtual GamepadInterface *gamepad() = 0;
 
 	/// Returns custom FIFO file which can be used as sensor.
 	virtual FifoInterface *fifo(const QString &port) = 0;

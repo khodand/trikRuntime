@@ -36,6 +36,8 @@ class Display;
 class Encoder;
 class EventDevice;
 class Fifo;
+class Gamepad;
+class GyroSensor;
 class MspCommunicatorInterface;
 class Keys;
 class Led;
@@ -47,10 +49,12 @@ class PowerMotor;
 class PwmCapture;
 class RangeSensor;
 class ServoMotor;
+class TonePlayer;
 class VectorSensor;
 
 /// Class representing TRIK controller board and devices installed on it, also provides access
 /// to peripherals like motors and sensors.
+/// Is NOT thread-safe.
 class Brick : public BrickInterface
 {
 	Q_OBJECT
@@ -83,6 +87,8 @@ public slots:
 
 	void playSound(const QString &soundFileName) override;
 
+	void playTone(int hzFreq, int msDuration) override;
+
 	void say(const QString &text) override;
 
 	void stop() override;
@@ -103,7 +109,7 @@ public slots:
 
 	VectorSensorInterface *accelerometer() override;
 
-	VectorSensorInterface *gyroscope() override;
+	GyroSensorInterface *gyroscope() override;
 
 	LineSensorInterface *lineSensor(const QString &port) override;
 
@@ -122,6 +128,8 @@ public slots:
 	DisplayInterface *display() override;
 
 	LedInterface *led() override;
+
+	GamepadInterface *gamepad() override;
 
 	FifoInterface *fifo(const QString &port) override;
 
@@ -149,11 +157,13 @@ private:
 	QScopedPointer<ModuleLoader> mModuleLoader;
 
 	QScopedPointer<VectorSensor> mAccelerometer;
-	QScopedPointer<VectorSensor> mGyroscope;
+	QScopedPointer<GyroSensor> mGyroscope;
 	QScopedPointer<Battery> mBattery;
 	QScopedPointer<Keys> mKeys;
 	QScopedPointer<Display> mDisplay;
 	QScopedPointer<Led> mLed;
+	QScopedPointer<Gamepad> mGamepad;
+	QScopedPointer<TonePlayer> mTonePlayer;
 
 	QHash<QString, ServoMotor *> mServoMotors;  // Has ownership.
 	QHash<QString, PwmCapture *> mPwmCaptures;  // Has ownership.

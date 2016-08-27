@@ -18,12 +18,10 @@
 
 #include "declSpec.h"
 
-namespace trikNetwork {
+namespace trikControl {
 
-class TcpConnector;
-
-/// Class to support remote control of a robot using TCP client.
-class TRIKNETWORK_EXPORT GamepadInterface : public QObject
+/// Remote control of a robot via Android gamepad.
+class TRIKCONTROL_EXPORT GamepadInterface : public QObject
 {
 	Q_OBJECT
 
@@ -73,7 +71,12 @@ signals:
 	/// @param pressed - 1 if button was pressed, 0 if it was released.
 	void button(int button, int pressed);
 
-	/// Emitted when gamepad disconnects from robot.
+	/// Emitted when a gamepad connects to robot. Note that robot may have several connected gamepads, and this signal
+	/// will be emitted only when the first gamepad connects to robot.
+	void connected();
+
+	/// Emitted when last gamepad disconnects from robot. Note that robot may have several connected gamepads
+	/// at the same time, so when one gamepad disconnects, this signal will not be emitted.
 	void disconnect();
 };
 

@@ -23,6 +23,9 @@ equal to its class name.
 <config version="model-2015" >
 	<!-- Initialization sh script, will be executed when runtime is launched. -->
 	<initScript>
+		echo 0 > /sys/class/misc/l3g42xxd/fs_selection
+		echo 2 > /sys/class/misc/l3g42xxd/odr_selection
+
 		echo 1 > /sys/class/gpio/gpio62/value
 
 		echo 1 > /sys/class/pwm/ehrpwm.1:1/request
@@ -61,11 +64,10 @@ equal to its class name.
 		<!--Device file for keys on a brick -->
 		<keys deviceFile="/dev/input/by-path/platform-gpio-keys-event" />
 
-		<!-- Settings for gamepad TCP server to communicate with Android "TRIK Gamepad" application -->
-		<gamepad port="4444" optional="true" />
-
 		<!-- Settings for mailbox server (which enables communication between robots) -->
 		<mailbox port="8889" optional="true" />
+
+		<gamepad file="/run/gamepad-service.out.fifo" optional="true" />
 	</deviceClasses>
 
 	<devicePorts>
@@ -160,6 +162,8 @@ equal to its class name.
 
 		<jga25-371 class="powerMotor" measures="(0;0)(5;7)(20;1352)(40;1996)(100;2400)" />
 
+		<motor350 class="powerMotor" period="10000" measures="(0;0)(9;10)(10;1331)(15;2601)(30;4127)(65;5110)(100;5443)" />
+
 		<manipulatorServomotor class="servoMotor" min="530000" max="2300000" zero="1415000" stop="0"
 				controlMin="0" controlMax="100" />
 
@@ -178,9 +182,9 @@ equal to its class name.
 
 		<volumeSensor class="digitalSensor" min="0" max="100" />
 
-		<encoder95 class="encoder" ticksInDegree="1.569444" />
+		<encoder95 class="encoder" ticks="157" degrees="100" />
 
-		<encoder126 class="encoder" ticksInDegree="32.964168" />
+		<encoder126 class="encoder" ticks="3296" degrees="1000" />
 
 		<colorSensor3x3 class="colorSensor" m="3" n="3" />
 	</deviceTypes>

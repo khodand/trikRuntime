@@ -17,7 +17,7 @@
 #include <trikKernel/configurer.h>
 #include <trikKernel/exceptions/malformedConfigException.h>
 #include <trikKernel/exceptions/internalErrorException.h>
-
+#include <QTimer>
 #include "mspI2cCommunicator.h"
 #include "configurerHelper.h"
 
@@ -55,19 +55,17 @@ PowerMotor::Status PowerMotor::status() const
 
 void PowerMotor::setPower(int power, bool constrain)
 {
-	if (!constrain) {
-		throw trikKernel::InternalErrorException("Invalid argument");
-	}
-
-	if (power > maxControlValue) {
-		power = maxControlValue;
-	} else if (power < minControlValue) {
-		power = minControlValue;
+	if (constrain) {
+		if (power > maxControlValue) {
+			power = maxControlValue;
+		} else if (power < minControlValue) {
+			power = minControlValue;
+		}
+		power = power <= 0 ? -mPowerMap[-power] : mPowerMap[power];
 	}
 
 	mCurrentPower = power;
 
-	power = power <= 0 ? -mPowerMap[-power] : mPowerMap[power];
 
 	power = mInvert ? -power : power;
 
@@ -91,7 +89,15 @@ int PowerMotor::period() const
 
 void PowerMotor::powerOff()
 {
-	setPower(0);
+	setPower(0, false); // ignore power units translation (linearisation)
+}
+
+void PowerMotor::forceBreak(int durationMs)
+{
+	if (durationMs <= 0)
+		forceBreak();
+	setPower(0x7f, false);
+	QTimer::singleShot(durationMs, this, SLOT(powerOff()));
 }
 
 void PowerMotor::setPeriod(int period)

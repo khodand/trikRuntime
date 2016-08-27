@@ -28,18 +28,23 @@ static const int absZ = 0x02;
 using namespace trikControl;
 
 VectorSensorWorker::VectorSensorWorker(const QString &eventFile, DeviceState &state
-		, const trikHal::HardwareAbstractionInterface &hardwareAbstraction)
-	: mEventFile(hardwareAbstraction.createEventFile(eventFile))
+		, const trikHal::HardwareAbstractionInterface &hardwareAbstraction
+		, QThread &thread)
+	: mEventFile(hardwareAbstraction.createEventFile(eventFile, thread))
 	, mState(state)
 {
 	mState.start();
 
-	mReading << 0 << 0 << 0;
+	mReading << 0 << 0 << 0 << 0 << 0 << 0;
 	mReadingUnsynced = mReading;
 
+	moveToThread(&thread);
+
+	mLastEventTimer.moveToThread(&thread);
 	mLastEventTimer.setInterval(maxEventDelay);
 	mLastEventTimer.setSingleShot(false);
 
+	mTryReopenTimer.moveToThread(&thread);
 	mTryReopenTimer.setInterval(reopenDelay);
 	mTryReopenTimer.setSingleShot(false);
 
@@ -50,13 +55,16 @@ VectorSensorWorker::VectorSensorWorker(const QString &eventFile, DeviceState &st
 	connect(&mTryReopenTimer, SIGNAL(timeout()), this, SLOT(onTryReopen()));
 
 	mEventFile->open();
+	thread.start();
 
 	if (mEventFile->isOpened()) {
-		mLastEventTimer.start();
+		// Timer should be started in its thread, so doing it via metacall
+		QMetaObject::invokeMethod(&mLastEventTimer, "start");
 	} else {
 		QLOG_WARN() << "Sensor" << mState.deviceName() << ", device file can not be opened, will retry in"
 				<< reopenDelay << "milliseconds";
-		mTryReopenTimer.start();
+		// Timer should be started in its thread, so doing it via metacall
+		QMetaObject::invokeMethod(&mTryReopenTimer, "start");
 		mState.fail();
 	}
 }

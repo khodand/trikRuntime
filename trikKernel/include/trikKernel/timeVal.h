@@ -13,21 +13,15 @@
  * limitations under the License. */
 
 #pragma once
-
+#include <QtCore/qmetatype.h>
 namespace trikKernel {
 
 /// Structure of a time value in a convenient format.
 class TimeVal
 {
 public:
-	/// Constructor.
-	TimeVal() = default;
 
-	/// Copy constructor.
-	/// @param timeVal - an object, a copy of which is created.
-	TimeVal(const TimeVal &timeVal);
-
-	/// Constructor. Parameters represent time in the format - (sec * 10^6 + mcsec) msces.
+	/// Constructor. Parameters represent time in the format - (sec * 10^6 + mcsec) mcsec.
 	/// Constructor translates this value to the new format - 1 unit of a new value(mTime) is equal to 256 mcsec.
 	/// Note that after these conversions value in microseconds becomes rounded, but we can neglect this fact
 	/// in most cases.
@@ -35,33 +29,46 @@ public:
 	/// = sec * mSecConst << (mShift - 6) + mcsec << mShift
 	TimeVal(int sec, int mcsec);
 
-	/// Translates an interior format to mcsec.
-	int toMcSec() const;
-
-	/// Overloaded "minus" operator.
-	/// @param left - a value before sign.
-	/// @param right - a value after sign.
-	friend const TimeVal operator-(const TimeVal &left, const TimeVal &right);
-
 	/// Overloaded "is equal" operator.
 	/// @param timeVal - a value, which is assigned to a variable.
 	TimeVal &operator=(const TimeVal &timeVal);
 
-private:
-	int mTime = 0;
+	/// Returns packed data that shifted to the left on mShift bits.
+	int packedUInt32() const;
 
-	static const int mSecConst = 15625;
-	static const int mShift = 8;
+	/// Creates TimeVal using packed data.
+	/// It needs for hiding one argument constructor of TimeVal from packed data.
+	static TimeVal fromPackedUInt32(int packedTime);
+
+	/// Counts time interval between two packed data of time
+	static int timeInterval(int packedTimeLeft, int packedTimeRight);
+#if QT_VERSION < 0x050000
+	/// This method is used in qRegisterMetaType() method and needs default constructor.
+	/// It is a friend method for hiding default constructor.
+	friend void *qMetaTypeConstructHelper<TimeVal>(const TimeVal *t);
+#else
+	friend struct QtMetaTypePrivate::QMetaTypeFunctionHelper<TimeVal>;
+#endif
+
+	/// "Minus" operator is for computing time interval between two timestamps, returns value in microsends.
+	/// @param left - a value before sign, usually "time after event".
+	/// @param right - a value after sign, usually "time before event".
+	friend int operator-(const TimeVal &left, const TimeVal &right);
+
+private:
+	TimeVal() = default;
+
+	explicit TimeVal(int packedTime);
+
+	uint32_t mTime = 0;
+
+	static const uint32_t mSecConst = 15625;
+	static const uint32_t mShift = 8;
 };
 
-/// Overloaded "minus" operator.
-/// @param left - a value before sign.
-/// @param right - a value after sign.
-inline const TimeVal operator-(const TimeVal &left, const TimeVal &right)
+inline int operator-(const TimeVal &left, const TimeVal &right)
 {
-	TimeVal deltaTime;
-	deltaTime.mTime	= left.mTime - right.mTime;
-	return deltaTime;
+	return (left.mTime - right.mTime) << TimeVal::mShift;
 }
 
 }

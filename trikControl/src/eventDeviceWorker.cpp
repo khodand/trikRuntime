@@ -14,13 +14,15 @@
 
 #include "eventDeviceWorker.h"
 
+#include <QtCore/QThread>
+
 #include <trikKernel/timeVal.h>
 
 using namespace trikControl;
 
 EventDeviceWorker::EventDeviceWorker(const QString &deviceFilePath, DeviceState &state
 		, const trikHal::HardwareAbstractionInterface &hardwareAbstraction)
-	: mEventFile(hardwareAbstraction.createEventFile(deviceFilePath))
+	: mEventFile(hardwareAbstraction.createEventFile(deviceFilePath, *QThread::currentThread()))
 {
 	state.start();
 	if (!mEventFile->open()) {
@@ -34,5 +36,5 @@ EventDeviceWorker::EventDeviceWorker(const QString &deviceFilePath, DeviceState 
 
 void EventDeviceWorker::onNewEvent(int eventType, int code, int value, const trikKernel::TimeVal &eventTime)
 {
-	emit newEvent(eventType, code, value, eventTime.toMcSec());
+	emit newEvent(eventType, code, value, eventTime.packedUInt32());
 }

@@ -17,9 +17,11 @@
 #include <QtCore/QFile>
 #include <QtCore/QVector>
 #include <QtCore/QTextStream>
+#include <QtCore/QSignalMapper>
 
 #include <trikKernel/fileUtils.h>
 #include <trikKernel/paths.h>
+#include <trikKernel/timeVal.h>
 #include <trikControl/batteryInterface.h>
 #include <trikControl/colorSensorInterface.h>
 #include <trikControl/displayInterface.h>
@@ -27,6 +29,8 @@
 #include <trikControl/eventCodeInterface.h>
 #include <trikControl/eventDeviceInterface.h>
 #include <trikControl/eventInterface.h>
+#include <trikControl/gamepadInterface.h>
+#include <trikControl/gyroSensorInterface.h>
 #include <trikControl/lineSensorInterface.h>
 #include <trikControl/motorInterface.h>
 #include <trikControl/objectSensorInterface.h>
@@ -34,7 +38,6 @@
 #include <trikControl/sensorInterface.h>
 #include <trikControl/vectorSensorInterface.h>
 #include <trikNetwork/mailboxInterface.h>
-#include <trikNetwork/gamepadInterface.h>
 
 #include "scriptable.h"
 #include "utils.h"
@@ -54,6 +57,7 @@ Q_DECLARE_METATYPE(EventCodeInterface*)
 Q_DECLARE_METATYPE(EventDeviceInterface*)
 Q_DECLARE_METATYPE(EventInterface*)
 Q_DECLARE_METATYPE(GamepadInterface*)
+Q_DECLARE_METATYPE(GyroSensorInterface*)
 Q_DECLARE_METATYPE(KeysInterface*)
 Q_DECLARE_METATYPE(LedInterface*)
 Q_DECLARE_METATYPE(LineSensorInterface*)
@@ -65,6 +69,7 @@ Q_DECLARE_METATYPE(SensorInterface*)
 Q_DECLARE_METATYPE(Threading*)
 Q_DECLARE_METATYPE(VectorSensorInterface*)
 Q_DECLARE_METATYPE(QVector<int>)
+Q_DECLARE_METATYPE(trikKernel::TimeVal)
 Q_DECLARE_METATYPE(QTimer*)
 
 QScriptValue print(QScriptContext *context, QScriptEngine *engine)
@@ -79,19 +84,33 @@ QScriptValue print(QScriptContext *context, QScriptEngine *engine)
 	}
 
 	QTextStream(stdout) << result << "\n";
-	engine->evaluate(QString("script.sendMessage(\"%1\");").arg(result));
+	auto scriptValue = engine->globalObject().property("script");
+	auto script = dynamic_cast<ScriptExecutionControl*> (scriptValue.toQObject());
+	if (script) {
+		QMetaObject::invokeMethod(script, "sendMessage", Q_ARG(QString, QString("print: %1").arg(result)));
+//		If this does not work then it can be workarrounded:
+//		QSignalMapper *mapper = new QSignalMapper();
+//		QObject::connect(mapper, SIGNAL(mapped(QString)), script, SIGNAL(sendMessage(QString)), Qt::DirectConnection);
+//		mapper->setMapping(nullptr, QString("print: %1").arg(result));
+//		mapper->map(nullptr);
+//		delete mapper;
+	}
 
+	return engine->toScriptValue(result);
+}
+
+QScriptValue timeInterval(QScriptContext *context, QScriptEngine *engine)
+{
+	int result = trikKernel::TimeVal::timeInterval(context->argument(0).toInteger(), context->argument(1).toInteger());
 	return engine->toScriptValue(result);
 }
 
 ScriptEngineWorker::ScriptEngineWorker(trikControl::BrickInterface &brick
 		, trikNetwork::MailboxInterface * const mailbox
-		, trikNetwork::GamepadInterface * const gamepad
 		, ScriptExecutionControl &scriptControl
 		)
 	: mBrick(brick)
 	, mMailbox(mailbox)
-	, mGamepad(gamepad)
 	, mScriptControl(scriptControl)
 	, mThreading(this, scriptControl)
 	, mDirectScriptsEngine(nullptr)
@@ -101,6 +120,7 @@ ScriptEngineWorker::ScriptEngineWorker(trikControl::BrickInterface &brick
 	connect(&mScriptControl, SIGNAL(quitSignal()), this, SLOT(onScriptRequestingToQuit()));
 
 	registerUserFunction("print", print);
+	registerUserFunction("timeInterval", timeInterval);
 }
 
 void ScriptEngineWorker::brickBeep()
@@ -171,10 +191,6 @@ void ScriptEngineWorker::resetBrick()
 		mMailbox->clearQueue();
 	}
 
-	if (mGamepad) {
-		mGamepad->reset();
-	}
-
 	mBrick.reset();
 }
 
@@ -200,6 +216,8 @@ void ScriptEngineWorker::doRun(const QString &script)
 
 void ScriptEngineWorker::runDirect(const QString &command, int scriptId)
 {
+	qDebug() << "ScriptEngineWorker::runDirect";
+
 	QMutexLocker locker(&mScriptStateMutex);
 	if (!mScriptControl.isInEventDrivenMode()) {
 		QLOG_INFO() << "ScriptEngineWorker: starting interpretation";
@@ -253,6 +271,18 @@ void ScriptEngineWorker::onScriptRequestingToQuit()
 	stopScript();
 }
 
+static QScriptValue timeValToScriptValue(QScriptEngine *engine, const trikKernel::TimeVal &in)
+{
+	QScriptValue obj = engine->newObject();
+	obj.setProperty("mcsec", in.packedUInt32());
+	return obj;
+}
+
+static void timeValFromScriptValue(const QScriptValue &object, trikKernel::TimeVal &out)
+{
+	out = trikKernel::TimeVal(0, object.property("mcsec").toInt32());
+}
+
 QScriptEngine * ScriptEngineWorker::createScriptEngine(bool supportThreads)
 {
 	QScriptEngine *engine = new QScriptEngine();
@@ -266,6 +296,7 @@ QScriptEngine * ScriptEngineWorker::createScriptEngine(bool supportThreads)
 	Scriptable<EventDeviceInterface>::registerMetatype(engine);
 	Scriptable<EventInterface>::registerMetatype(engine);
 	Scriptable<GamepadInterface>::registerMetatype(engine);
+	Scriptable<GyroSensorInterface>::registerMetatype(engine);
 	Scriptable<FifoInterface>::registerMetatype(engine);
 	Scriptable<KeysInterface>::registerMetatype(engine);
 	Scriptable<LedInterface>::registerMetatype(engine);
@@ -276,6 +307,7 @@ QScriptEngine * ScriptEngineWorker::createScriptEngine(bool supportThreads)
 	Scriptable<SensorInterface>::registerMetatype(engine);
 	Scriptable<SoundSensorInterface>::registerMetatype(engine);
 	Scriptable<QTimer>::registerMetatype(engine);
+	qScriptRegisterMetaType(engine, timeValToScriptValue, timeValFromScriptValue);
 	Scriptable<VectorSensorInterface>::registerMetatype(engine);
 
 	qScriptRegisterSequenceMetaType<QVector<int>>(engine);
@@ -288,8 +320,10 @@ QScriptEngine * ScriptEngineWorker::createScriptEngine(bool supportThreads)
 		engine->globalObject().setProperty("mailbox", engine->newQObject(mMailbox));
 	}
 
-	if (mGamepad) {
-		engine->globalObject().setProperty("gamepad", engine->newQObject(mGamepad));
+	// Gamepad can still be accessed from script as brick.gamepad(), 'gamepad' variable is here for backwards
+	// compatibility.
+	if (mBrick.gamepad()) {
+		engine->globalObject().setProperty("gamepad", engine->newQObject(mBrick.gamepad()));
 	}
 
 	if (supportThreads) {
@@ -297,6 +331,10 @@ QScriptEngine * ScriptEngineWorker::createScriptEngine(bool supportThreads)
 	}
 
 	evalSystemJs(engine);
+
+	for (const auto &step : mCustomInitSteps) {
+		step(engine);
+	}
 
 	engine->setProcessEventsInterval(1);
 	return engine;
@@ -320,6 +358,11 @@ QScriptEngine *ScriptEngineWorker::copyScriptEngine(const QScriptEngine * const 
 void ScriptEngineWorker::registerUserFunction(const QString &name, QScriptEngine::FunctionSignature function)
 {
 	mRegisteredUserFunctions[name] = function;
+}
+
+void ScriptEngineWorker::addCustomEngineInitStep(const std::function<void (QScriptEngine *)> &step)
+{
+	mCustomInitSteps.append(step);
 }
 
 void ScriptEngineWorker::evalSystemJs(QScriptEngine * const engine) const

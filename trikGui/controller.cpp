@@ -25,7 +25,6 @@
 #include <trikKernel/exceptions/internalErrorException.h>
 #include <trikControl/brickFactory.h>
 #include <trikNetwork/mailboxFactory.h>
-#include <trikNetwork/gamepadFactory.h>
 #include <trikWiFi/trikWiFi.h>
 
 #include "runningWidget.h"
@@ -48,10 +47,12 @@ Controller::Controller(const QString &configPath)
 	trikKernel::Configurer configurer(correctedConfigPath + "system-config.xml"
 			, correctedConfigPath + "model-config.xml");
 
-	mGamepad.reset(trikNetwork::GamepadFactory::create(configurer));
+	connect(mBrick->gamepad(), SIGNAL(disconnect()), this, SIGNAL(gamepadDisconnected()));
+	connect(mBrick->gamepad(), SIGNAL(connected()), this, SIGNAL(gamepadConnected()));
+
 	mMailbox.reset(trikNetwork::MailboxFactory::create(configurer));
-	mTelemetry.reset(new trikTelemetry::TrikTelemetry(*mBrick, *mGamepad));
-	mScriptRunner.reset(new trikScriptRunner::TrikScriptRunner(*mBrick, mMailbox.data(), mGamepad.data()));
+	mTelemetry.reset(new trikTelemetry::TrikTelemetry(*mBrick));
+	mScriptRunner.reset(new trikScriptRunner::TrikScriptRunner(*mBrick, mMailbox.data()));
 	mCommunicator.reset(new trikCommunicator::TrikCommunicator(*mScriptRunner, configurer.version()));
 
 	mWiFi.reset(new trikWiFi::TrikWiFi("/tmp/trikwifi", "/var/run/wpa_supplicant/wlan0", this));
@@ -90,16 +91,25 @@ Controller::~Controller()
 
 void Controller::runFile(const QString &filePath)
 {
-	QFileInfo const fileInfo(filePath);
+	const QFileInfo fileInfo(filePath);
 	if (fileInfo.suffix() == "qts" || fileInfo.suffix() == "js") {
 		mScriptRunner->run(trikKernel::FileUtils::readFromFile(fileInfo.canonicalFilePath()), fileInfo.baseName());
 	} else if (fileInfo.suffix() == "wav" || fileInfo.suffix() == "mp3") {
 		mScriptRunner->run("brick.playSound(\"" + fileInfo.canonicalFilePath() + "\");", fileInfo.baseName());
 	} else if (fileInfo.suffix() == "sh") {
 		QProcess::startDetached("sh", {filePath});
+	} else if (fileInfo.suffix() == "exe") {
+		QProcess::startDetached("mono", {filePath});
+	} else if (fileInfo.suffix() == "py") {
+		QProcess::startDetached("python", {filePath});
 	} else if (fileInfo.isExecutable()) {
 		QProcess::startDetached(filePath);
 	}
+}
+
+void Controller::runScript(const QString &script)
+{
+	mScriptRunner->run(script);
 }
 
 void Controller::abortExecution()
@@ -131,6 +141,15 @@ bool Controller::communicatorConnectionStatus()
 	return mTelemetry->activeConnections() > 0 && mCommunicator->activeConnections() > 0;
 }
 
+bool Controller::gamepadConnectionStatus() const
+{
+	if (mBrick->gamepad() != nullptr) {
+		return mBrick->gamepad()->isConnected();
+	} else {
+		return false;
+	}
+}
+
 void Controller::updateCommunicatorStatus()
 {
 	emit communicatorStatusChanged(communicatorConnectionStatus());
@@ -149,10 +168,6 @@ void Controller::scriptExecutionCompleted(const QString &error, int scriptId)
 
 	if (mMailbox) {
 		mMailbox->clearQueue();
-	}
-
-	if (mGamepad) {
-		mGamepad->reset();
 	}
 
 	mBrick->led()->green();

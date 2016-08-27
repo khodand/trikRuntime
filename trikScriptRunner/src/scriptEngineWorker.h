@@ -14,13 +14,14 @@
 
 #pragma once
 
+#include <functional>
+
 #include <QtCore/QString>
 #include <QtCore/QThread>
 #include <QtScript/QScriptEngine>
 
 #include <trikControl/brickInterface.h>
 #include <trikNetwork/mailboxInterface.h>
-#include <trikNetwork/gamepadInterface.h>
 
 #include "scriptExecutionControl.h"
 #include "threading.h"
@@ -39,11 +40,9 @@ public:
 	/// Constructor.
 	/// @param brick - reference to trikControl::Brick instance.
 	/// @param mailbox - mailbox object used to communicate with other robots.
-	/// @param gamepad - gamepad object used to interact with TRIK Gamepad on Android device.
 	/// @param scriptControl - reference to script execution control object.
 	ScriptEngineWorker(trikControl::BrickInterface &brick
 			, trikNetwork::MailboxInterface * const mailbox
-			, trikNetwork::GamepadInterface * const gamepad
 			, ScriptExecutionControl &scriptControl
 			);
 
@@ -61,6 +60,9 @@ public:
 	/// Registers given C++ function as callable from script, with given name.
 	/// Can be safely called from other threads (but it shall not be called simultaneously with engine creation).
 	void registerUserFunction(const QString &name, QScriptEngine::FunctionSignature function);
+
+	/// Helper for adding custom initialization steps when creating script engine from outside of the TrikRuntime.
+	void addCustomEngineInitStep(const std::function<void (QScriptEngine *)> &step);
 
 	/// Clears execution state and stops robot.
 	/// Can be safely called from other threads.
@@ -133,13 +135,13 @@ private:
 
 	trikControl::BrickInterface &mBrick;
 	trikNetwork::MailboxInterface * const mMailbox;  // Does not have ownership.
-	trikNetwork::GamepadInterface * const mGamepad;  // Does not have ownership.
 	ScriptExecutionControl &mScriptControl;
 	Threading mThreading;
 	QScriptEngine *mDirectScriptsEngine = nullptr;  // Has ownership.
 	int mScriptId = 0;
 	State mState = State::ready;
 	QHash<QString, QScriptEngine::FunctionSignature> mRegisteredUserFunctions;
+	QVector<std::function<void (QScriptEngine *)>> mCustomInitSteps;
 
 	/// Ensures that there is only one instance of StopScript running at any given time, to prevent unpredicted
 	/// behavior when programs are started and stopped actively.

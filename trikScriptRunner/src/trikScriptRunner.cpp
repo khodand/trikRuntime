@@ -26,14 +26,16 @@ using namespace trikScriptRunner;
 
 TrikScriptRunner::TrikScriptRunner(trikControl::BrickInterface &brick
 		, trikNetwork::MailboxInterface * const mailbox
-		, trikNetwork::GamepadInterface * const gamepad
 		)
 	: mScriptController(new ScriptExecutionControl())
-	, mScriptEngineWorker(new ScriptEngineWorker(brick, mailbox, gamepad, *mScriptController))
+	, mScriptEngineWorker(new ScriptEngineWorker(brick, mailbox, *mScriptController))
 	, mMaxScriptId(0)
 {
 	connect(&mWorkerThread, SIGNAL(finished()), mScriptEngineWorker, SLOT(deleteLater()));
 	connect(&mWorkerThread, SIGNAL(finished()), &mWorkerThread, SLOT(deleteLater()));
+	if (mailbox) {
+		connect(mailbox, SIGNAL(newMessage(int, QString)), this, SLOT(sendMessageFromMailBox(int, QString)));
+	}
 
 	mScriptEngineWorker->moveToThread(&mWorkerThread);
 
@@ -57,6 +59,11 @@ TrikScriptRunner::~TrikScriptRunner()
 void TrikScriptRunner::registerUserFunction(const QString &name, QScriptEngine::FunctionSignature function)
 {
 	mScriptEngineWorker->registerUserFunction(name, function);
+}
+
+void TrikScriptRunner::addCustomEngineInitStep(const std::function<void (QScriptEngine *)> &step)
+{
+	mScriptEngineWorker->addCustomEngineInitStep(step);
 }
 
 void TrikScriptRunner::brickBeep()
@@ -91,13 +98,17 @@ void TrikScriptRunner::abort()
 
 void TrikScriptRunner::onScriptStart(int scriptId)
 {
-	if (scriptId == -1) {
-		return;
-	}
-
-	if (mScriptFileNames.contains(scriptId)) {
+	if (scriptId != -1 && mScriptFileNames.contains(scriptId)) {
 		emit startedScript(mScriptFileNames[scriptId], scriptId);
 	} else {
 		emit startedDirectScript(scriptId);
 	}
+}
+
+void TrikScriptRunner::sendMessageFromMailBox(int senderNumber, const QString &message)
+{
+	emit sendMessage(QString("mail: sender: %1 contents: %2")
+			.arg(senderNumber)
+			.arg(message)
+	);
 }

@@ -16,19 +16,9 @@
 
 using namespace trikKernel;
 
-TimeVal::TimeVal(const TimeVal &timeVal)
-	: mTime(timeVal.mTime)
-{
-}
-
 TimeVal::TimeVal(int sec, int mcsec)
 {
 	mTime = ((sec * mSecConst) >> (mShift - 6)) + (mcsec >> mShift);
-}
-
-int TimeVal::toMcSec() const
-{
-	return mTime << mShift;
 }
 
 TimeVal &TimeVal::operator=(const TimeVal &timeVal)
@@ -36,3 +26,22 @@ TimeVal &TimeVal::operator=(const TimeVal &timeVal)
 	mTime = timeVal.mTime;
 	return *this;
 }
+
+int TimeVal::packedUInt32() const
+{
+	return mTime;
+}
+
+TimeVal TimeVal::fromPackedUInt32(int packedTime)
+{
+	return TimeVal(packedTime);
+}
+
+int TimeVal::timeInterval(int packedTimeLeft, int packedTimeRight)
+{
+	return (packedTimeLeft - packedTimeRight) << mShift;
+}
+
+TimeVal::TimeVal(int packedTime)
+	: mTime(packedTime)
+{}
