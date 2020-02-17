@@ -18,6 +18,7 @@
 #include <QtCore/QTimer>
 #include <QtCore/QStringList>
 #include <trikControl/brickInterface.h>
+#include <trikScriptRunnerInterface.h>
 
 namespace trikScriptRunner {
 
@@ -29,7 +30,7 @@ class ScriptExecutionControl : public QObject
 public:
 	/// Constructor.
 	/// @param brick - reference to trikControl::Brick instance.
-	explicit ScriptExecutionControl(trikControl::BrickInterface &brick);
+	explicit ScriptExecutionControl(trikControl::BrickInterface &brick, ScriptType stype);
 
 	~ScriptExecutionControl() override;
 
@@ -93,7 +94,7 @@ signals:
 private:
 	QList<QTimer *> mTimers; // Has ownership.
 	trikControl::BrickInterface &mBrick;
-
+	const ScriptType mScriptType;
 
 	/// True, if a system is in event-driven running mode, so it shall wait for events when script is executed.
 	/// If it is false, script will exit immediately.

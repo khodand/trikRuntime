@@ -47,7 +47,7 @@ PythonEngineWorker::PythonEngineWorker(trikControl::BrickInterface &brick
 		, trikNetwork::MailboxInterface * const mailbox
 		)
 	: mBrick(brick)
-	, mScriptExecutionControl(new ScriptExecutionControl(brick))
+	, mScriptExecutionControl(new ScriptExecutionControl(brick, ScriptType::PYTHON))
 	, mMailbox(mailbox)
 	, mState(ready)
 {
@@ -131,6 +131,7 @@ void PythonEngineWorker::init()
 			QTimer::singleShot(0, this, [this, str](){this->textInStdOut(str);});
 			mScriptExecutionControl->wait(0);
 		});
+		qDebug() << thread() << QThread::currentThread() << mScriptExecutionControl->thread() << " init";
 		PythonQtRegisterListTemplateConverter(QVector, uint8_t)
 		PythonQt_QtAll::init();
 	}

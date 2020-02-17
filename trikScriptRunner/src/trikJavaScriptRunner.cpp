@@ -27,7 +27,7 @@ using namespace trikScriptRunner;
 TrikJavaScriptRunner::TrikJavaScriptRunner(trikControl::BrickInterface &brick
 										   , trikNetwork::MailboxInterface * const mailbox
 										   )
-	: mScriptController(new ScriptExecutionControl(brick))
+	: mScriptController(new ScriptExecutionControl(brick, ScriptType::JAVASCRIPT))
 	, mScriptEngineWorker(new ScriptEngineWorker(brick, mailbox, *mScriptController))
 	, mMaxScriptId(0)
 	, mVariablesServer(new TrikVariablesServer())

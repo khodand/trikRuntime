@@ -24,7 +24,10 @@
 
 using namespace trikScriptRunner;
 
-ScriptExecutionControl::ScriptExecutionControl(trikControl::BrickInterface &brick): mBrick(brick) {
+ScriptExecutionControl::ScriptExecutionControl(trikControl::BrickInterface &brick, ScriptType stype):
+	mBrick(brick),
+	mScriptType(stype)
+{
 	qRegisterMetaType<QVector<int32_t>>("QVector<int32_t>");
 }
 
@@ -86,10 +89,14 @@ int ScriptExecutionControl::random(int from, int to) const
 
 void ScriptExecutionControl::run()
 {
-	//mInEventDrivenMode = true;
-	QEventLoop loop;
-	QObject::connect(this, &ScriptExecutionControl::stopWaiting, &loop, &QEventLoop::quit, Qt::DirectConnection);
-	loop.exec();
+	if (mScriptType == ScriptType::JAVASCRIPT) {
+		mInEventDrivenMode = true;
+	}
+	else {
+		QEventLoop loop;
+		QObject::connect(this, &ScriptExecutionControl::stopWaiting, &loop, &QEventLoop::quit, Qt::DirectConnection);
+		loop.exec();
+	}
 }
 
 bool ScriptExecutionControl::isInEventDrivenMode() const
