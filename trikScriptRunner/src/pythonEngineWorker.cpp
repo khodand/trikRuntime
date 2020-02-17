@@ -15,6 +15,7 @@
 #include <QProcess>
 #include <QsLog.h>
 #include <QVector>
+#include <QtCore/QEventLoop>
 
 #include <trikNetwork/mailboxInterface.h>
 #include <trikKernel/paths.h>
@@ -49,7 +50,12 @@ PythonEngineWorker::PythonEngineWorker(trikControl::BrickInterface &brick
 	, mScriptExecutionControl(new ScriptExecutionControl(brick))
 	, mMailbox(mailbox)
 	, mState(ready)
-{}
+{
+	QObject::connect(this, &PythonEngineWorker::completed, mScriptExecutionControl.data()
+					 , [=](){mScriptExecutionControl.data()->reset();});
+	QObject::connect(mScriptExecutionControl.data(), &ScriptExecutionControl::quitSignal, this, &PythonEngineWorker::stopScript);
+	qDebug() << thread() << QThread::currentThread() << mScriptExecutionControl->thread() << " constructor";
+}
 
 PythonEngineWorker::~PythonEngineWorker()
 {
@@ -216,6 +222,9 @@ void PythonEngineWorker::stopScript()
 
 	mState = stopping;
 
+	//QMetaObject::invokeMethod(mScriptExecutionControl.data(), &ScriptExecutionControl::reset, Qt::BlockingQueuedConnection);
+	mScriptExecutionControl.data()->reset();
+	qDebug() << thread() << QThread::currentThread() << mScriptExecutionControl->thread() << " stopScript";
 	if (QThread::currentThread() != thread()) {
 		abortPythonInterpreter();
 	} else {
@@ -271,6 +280,11 @@ void PythonEngineWorker::doRun(const QString &script, const QFileInfo &scriptFil
 								+ scriptFile.canonicalPath() + "')");
 	}
 	mMainContext.evalScript(script);
+//	if (mScriptExecutionControl.data()->isInEventDrivenMode()) {
+//		//mScriptExecutionControl.data()->wait();
+//		QMetaObject::invokeMethod(mScriptExecutionControl.data(), [=](){mScriptExecutionControl.data()->wait();}, Qt::BlockingQueuedConnection);
+//		qDebug() << thread() << QThread::currentThread() << mScriptExecutionControl->thread() << " doRun";
+//	}
 
 	QLOG_INFO() << "PythonEngineWorker: evaluation ended";
 
@@ -286,7 +300,7 @@ void PythonEngineWorker::doRun(const QString &script, const QFileInfo &scriptFil
 void PythonEngineWorker::runDirect(const QString &command)
 {
 	QMutexLocker locker(&mScriptStateMutex);
-	QMetaObject::invokeMethod(this, "doRunDirect", Q_ARG(QString, command));
+	QMetaObject::invokeMethod(this, [this, command](){this->doRunDirect(command);});
 }
 
 void PythonEngineWorker::doRunDirect(const QString &command)

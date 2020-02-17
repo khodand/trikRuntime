@@ -55,7 +55,7 @@ void ScriptThread::run()
 		QLOG_ERROR() << "Uncaught exception with next backtrace" << backtrace;
 	} else if (mThreading.inEventDrivenMode()) {
 		QEventLoop loop;
-		connect(this, SIGNAL(stopRunning()), &loop, SLOT(quit()), Qt::QueuedConnection);
+		connect(this, &ScriptThread::stopRunning, &loop, &QEventLoop::quit, Qt::QueuedConnection);
 		loop.exec();
 	}
 

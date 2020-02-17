@@ -38,7 +38,7 @@ void ScriptExecutionControl::reset()
 	mInEventDrivenMode = false;
 	emit stopWaiting();
 	for (auto &&timer : mTimers) {
-		QMetaObject::invokeMethod(timer, "stop", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(timer, &QTimer::stop, Qt::QueuedConnection);
 		timer->deleteLater();
 	}
 
@@ -63,6 +63,13 @@ void ScriptExecutionControl::wait(const int &milliseconds)
 	loop.exec();
 }
 
+void ScriptExecutionControl::wait()
+{
+	QEventLoop loop;
+	QObject::connect(this, &ScriptExecutionControl::stopWaiting, &loop, &QEventLoop::quit, Qt::DirectConnection);
+	loop.exec();
+}
+
 qint64 ScriptExecutionControl::time() const
 {
 	return QDateTime::currentMSecsSinceEpoch();
@@ -79,7 +86,10 @@ int ScriptExecutionControl::random(int from, int to) const
 
 void ScriptExecutionControl::run()
 {
-	mInEventDrivenMode = true;
+	//mInEventDrivenMode = true;
+	QEventLoop loop;
+	QObject::connect(this, &ScriptExecutionControl::stopWaiting, &loop, &QEventLoop::quit, Qt::DirectConnection);
+	loop.exec();
 }
 
 bool ScriptExecutionControl::isInEventDrivenMode() const

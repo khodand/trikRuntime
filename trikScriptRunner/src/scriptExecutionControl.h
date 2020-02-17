@@ -46,6 +46,9 @@ public:
 	/// Waits given amount of time in milliseconds and returns.
 	Q_INVOKABLE void wait(const int &milliseconds);
 
+	/// Waits until stop signal and returns.
+	Q_INVOKABLE void wait();
+
 	/// Returns the number of milliseconds since 1970-01-01T00:00:00 UTC.
 	Q_INVOKABLE qint64 time() const;
 
