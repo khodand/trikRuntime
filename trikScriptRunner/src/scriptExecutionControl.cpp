@@ -86,10 +86,7 @@ int ScriptExecutionControl::random(int from, int to) const
 
 void ScriptExecutionControl::run()
 {
-	//mInEventDrivenMode = true;
-	QEventLoop loop;
-	QObject::connect(this, &ScriptExecutionControl::stopWaiting, &loop, &QEventLoop::quit, Qt::DirectConnection);
-	loop.exec();
+	mInEventDrivenMode = true;
 }
 
 bool ScriptExecutionControl::isInEventDrivenMode() const

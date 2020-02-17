@@ -280,11 +280,13 @@ void PythonEngineWorker::doRun(const QString &script, const QFileInfo &scriptFil
 								+ scriptFile.canonicalPath() + "')");
 	}
 	mMainContext.evalScript(script);
-//	if (mScriptExecutionControl.data()->isInEventDrivenMode()) {
-//		//mScriptExecutionControl.data()->wait();
-//		QMetaObject::invokeMethod(mScriptExecutionControl.data(), [=](){mScriptExecutionControl.data()->wait();}, Qt::BlockingQueuedConnection);
-//		qDebug() << thread() << QThread::currentThread() << mScriptExecutionControl->thread() << " doRun";
-//	}
+
+	if (mScriptExecutionControl.data()->isInEventDrivenMode()) {
+		QEventLoop loop;
+		QObject::connect(mScriptExecutionControl.data(), &ScriptExecutionControl::stopWaiting, &loop, &QEventLoop::quit);
+		qDebug() << thread() << QThread::currentThread() << mScriptExecutionControl->thread() << loop.thread() << "doRun";
+		loop.exec();
+	}
 
 	QLOG_INFO() << "PythonEngineWorker: evaluation ended";
 
