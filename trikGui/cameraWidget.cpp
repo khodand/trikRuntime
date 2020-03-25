@@ -66,7 +66,7 @@ void CameraWidget::doPhoto()
 	auto const & photo = mBrick.getStillImage();
 
 	if (!photo.isEmpty()) {
-		QImage image(photo.data(), 320, 240, QImage::Format_RGB888);
+		QImage image(photo.data(), 160, 120, QImage::Format_RGB888);
 		mPixmap.setPixmap(QPixmap::fromImage(image));
 
 		QDir dir(trikKernel::Paths::imagesPath());
