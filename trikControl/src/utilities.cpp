@@ -23,14 +23,14 @@ QImage  Utilities::imageFromBytes(const QVector<int32_t> &array, int width, int 
 	// Helper function to convert data
 	uchar *formattedData = nullptr;
 	auto copyAligned = [&](int perLine){
-		if (width * height > array.size()) {
+		if (perLine * height > array.size()) {
 			QLOG_WARN() << "imageFromBytes: not enough data";
 			return;
 		}
 		auto scanLineSize = static_cast<int>((static_cast<unsigned>(perLine + 3)) & 0xFFFFFFFC);
 		auto dst = formattedData = new uchar[scanLineSize * height];
-		for (auto src = array.begin(); src < array.end(); src += width) {
-			dst = std::copy(src, src + width, dst);
+		for (auto src = array.begin(); src < array.end(); src += perLine) {
+			dst = std::copy(src, src + perLine, dst);
 			dst += scanLineSize - perLine;
 		}
 	};
