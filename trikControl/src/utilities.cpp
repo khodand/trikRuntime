@@ -23,7 +23,7 @@ QImage  Utilities::imageFromBytes(const QVector<int32_t> &array, int width, int 
 	// Helper function to convert data
 	uchar *formattedData = nullptr;
 	auto copyAligned = [&](int perLine){
-		if (width * height > array.size()) {
+		if (perLine * height > array.size()) {
 			QLOG_WARN() << "imageFromBytes: not enough data";
 			return;
 		}
@@ -39,11 +39,7 @@ QImage  Utilities::imageFromBytes(const QVector<int32_t> &array, int width, int 
 
 	if (!format.compare("rgb32", Qt::CaseInsensitive)) {
 		fmt = QImage::Format_RGB32;
-		if (width * height <= array.size()) {
-			// RGB32 alligned by default just needs to copy
-			formattedData = new uchar[width * height];
-			formattedData = std::copy(array.begin(), array.end(), formattedData);
-		}
+		copyAligned(4 * width);
 	} else if (!format.compare("rgb888", Qt::CaseInsensitive)) {
 		fmt = QImage::Format_RGB888;
 		copyAligned(3 * width);
