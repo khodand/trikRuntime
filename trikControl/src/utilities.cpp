@@ -38,7 +38,7 @@ QImage  Utilities::imageFromBytes(const QVector<int32_t> &array, int width, int 
 	auto fmt = QImage::Format_Invalid;
 
 	if (!format.compare("rgb32", Qt::CaseInsensitive)) {
-		if (width * height <= array.size()) {
+		if (width * height <= array.size()) { //dsada
 			auto code = static_cast<const uchar *>(static_cast<const void *>(array.data()));
 			formattedData = std::copy(code, code + width * height , formattedData);
 //			return QImage(static_cast<const uchar *>(static_cast<const void *>(array.data()))
