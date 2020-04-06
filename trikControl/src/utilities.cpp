@@ -29,7 +29,7 @@ QImage  Utilities::imageFromBytes(const QVector<int32_t> &array, int width, int 
 		}
 		auto scanLineSize = static_cast<int>((static_cast<unsigned>(perLine + 3)) & 0xFFFFFFFC);
 		auto dst = formattedData = new uchar[scanLineSize * height];
-		for (auto src = array.begin(); src < array.end(); src += perLine) {
+		for (auto src = array.begin(); src < array.end(); src += width) {
 			dst = std::copy(src, src + perLine, dst);
 			dst += scanLineSize - perLine;
 		}
@@ -40,13 +40,13 @@ QImage  Utilities::imageFromBytes(const QVector<int32_t> &array, int width, int 
 
 	if (!format.compare("rgb32", Qt::CaseInsensitive)) {
 		fmt = QImage::Format_RGB32;
-		formattedData = new uchar[width * height];
-		formattedData = const_cast<uchar *>(static_cast<const uchar *>(static_cast<const void *>(array.data())));
+		//formattedData = new uchar[width * height];
+		//formattedData = static_cast<const uchar *>(static_cast<const void *>(array.data()));
 		//formattedData = std::copy();
 		//formattedData = const_cast<uchar *>(rawData);
 
 		//formattedData = code;
-		//copyAligned(4 * width);
+		copyAligned(4 * width);
 		//formattedData = static_cast<const uchar *>(static_cast<const void *>(array.data()));
 	} else if (!format.compare("rgb888", Qt::CaseInsensitive)) {
 		fmt = QImage::Format_RGB888;
