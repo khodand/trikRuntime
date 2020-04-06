@@ -29,7 +29,7 @@ QImage  Utilities::imageFromBytes(const QVector<int32_t> &array, int width, int 
 		}
 		auto scanLineSize = static_cast<int>((static_cast<unsigned>(perLine + 3)) & 0xFFFFFFFC);
 		auto dst = formattedData = new uchar[scanLineSize * height];
-		for (auto src = array.begin(); src < array.end(); src += width) {
+		for (auto src = array.begin(); src < array.end(); src += perLine) {
 			dst = std::copy(src, src + perLine, dst);
 			dst += scanLineSize - perLine;
 		}
