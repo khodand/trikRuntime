@@ -40,7 +40,8 @@ QImage  Utilities::imageFromBytes(const QVector<int32_t> &array, int width, int 
 
 	if (!format.compare("rgb32", Qt::CaseInsensitive)) {
 		fmt = QImage::Format_RGB32;
-		copyAligned(4 * width);
+		formattedData = std::copy(array.begin(), array.end(), formattedData);
+		//copyAligned(4 * width);
 		//formattedData = static_cast<const uchar *>(static_cast<const void *>(array.data()));
 	} else if (!format.compare("rgb888", Qt::CaseInsensitive)) {
 		fmt = QImage::Format_RGB888;
