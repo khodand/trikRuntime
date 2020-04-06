@@ -43,11 +43,11 @@ QImage  Utilities::imageFromBytes(const QVector<int32_t> &array, int width, int 
 //		auto src = new int32_t[array.size()];
 //		src = std::copy(array.begin(), array.end(), src);
 //		formattedData = static_cast< uchar *>(static_cast< void *>(src));
-		return QImage(static_cast<const uchar *>(static_cast<const void *>(array.data()))
-			      , width, height, fmt);
-		//formattedData = new uchar[width * height];
+		//return QImage(static_cast<const uchar *>(static_cast<const void *>(array.data()))
+//			      , width, height, fmt);
+		formattedData = new uchar[width * height];
 		//formattedData = static_cast<const uchar *>(static_cast<const void *>(array.data()));
-		//formattedData = std::copy();
+		formattedData = std::copy(array.begin(), array.end(), formattedData );
 		//formattedData = const_cast<uchar *>(rawData);
 
 		//formattedData = code;
