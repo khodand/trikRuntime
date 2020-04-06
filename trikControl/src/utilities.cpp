@@ -40,9 +40,11 @@ QImage  Utilities::imageFromBytes(const QVector<int32_t> &array, int width, int 
 
 	if (!format.compare("rgb32", Qt::CaseInsensitive)) {
 		fmt = QImage::Format_RGB32;
-		auto src = new int32_t[array.size()];
-		src = std::copy(array.begin(), array.end(), src);
-		formattedData = static_cast< uchar *>(static_cast< void *>(src));
+//		auto src = new int32_t[array.size()];
+//		src = std::copy(array.begin(), array.end(), src);
+//		formattedData = static_cast< uchar *>(static_cast< void *>(src));
+		return QImage(static_cast<const uchar *>(static_cast<const void *>(array.data()))
+			      , width, height, fmt);
 		//formattedData = new uchar[width * height];
 		//formattedData = static_cast<const uchar *>(static_cast<const void *>(array.data()));
 		//formattedData = std::copy();
