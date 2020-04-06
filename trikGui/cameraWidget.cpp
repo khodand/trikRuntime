@@ -66,7 +66,9 @@ void CameraWidget::doPhoto()
 	}
 
 	auto const & photo = trikControl::Utilities::rescalePhoto(mBrick.getStillImage());
-	auto image = trikControl::Utilities::imageFromBytes(photo, 160, 120, "rgb888");
+	auto const formattedData = static_cast<const uchar *>(static_cast<const void *>(photo.data()));
+	auto image = QImage(formattedData, 160, 120, QImage::Format_RGB32);
+			//trikControl::Utilities::imageFromBytes(photo, 160, 120, "rgb888");
 
 	if (!image.isNull()) {
 		mPixmap.setPixmap(QPixmap::fromImage(std::move(image)));
