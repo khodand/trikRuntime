@@ -34,8 +34,7 @@ QImage  Utilities::imageFromBytes(const QVector<int32_t> &array, int width, int 
 			dst += scanLineSize - perLine;
 		}
 	};
-	QLOG_WARN() << "imageFromBytes: array size" << array.size();
-	QLOG_WARN() << "imageFromBytes: array data" << array.data();
+
 	auto fmt = QImage::Format_Invalid;
 
 	if (!format.compare("rgb32", Qt::CaseInsensitive)) {
@@ -43,12 +42,6 @@ QImage  Utilities::imageFromBytes(const QVector<int32_t> &array, int width, int 
 			return QImage(static_cast<const uchar *>(static_cast<const void *>(array.data()))
 				      , width, height, QImage::Format_RGB32);
 		}
-		//formattedData = static_cast<const uchar *>(static_cast<const void *>(array.data()));
-		//formattedData = const_cast<uchar *>(rawData);
-
-		//formattedData = code;
-		//copyAligned(width);
-		//formattedData = static_cast<const uchar *>(static_cast<const void *>(array.data()));
 	} else if (!format.compare("rgb888", Qt::CaseInsensitive)) {
 		fmt = QImage::Format_RGB888;
 		copyAligned(3 * width);
@@ -59,7 +52,6 @@ QImage  Utilities::imageFromBytes(const QVector<int32_t> &array, int width, int 
 		QLOG_WARN() << "imageFromBytes: Unsupported format " << format;
 	}
 
-	QLOG_WARN() << "imageFromBytes: formatted data" << formattedData;
 	if (!formattedData) {
 		return QImage();
 	} else {
