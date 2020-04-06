@@ -65,7 +65,7 @@ void CameraWidget::doPhoto()
 		return;
 	}
 
-	auto const & photo = trikControl::Utilities::rescalePhoto(mBrick.getStillImage());
+	auto const photo = trikControl::Utilities::rescalePhoto(mBrick.getStillImage());
 	//auto const formattedData = static_cast<const uchar *>(static_cast<const void *>(photo.data()));
 	auto image = trikControl::Utilities::imageFromBytes(photo, 160, 120, "rgb32");
 	//image.convertToFormat(QImage::Format_RGB32);
