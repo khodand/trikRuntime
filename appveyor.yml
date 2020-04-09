@@ -24,14 +24,6 @@ environment:
 
   matrix:
       - MINGW: C:\Qt\Tools\mingw730_32
-        QTDIR: C:\Qt\5.14\mingw73_32
-        PYTHON_PATH: C:\Python38
-        CONFIGURATION: release
-      - MINGW: C:\Qt\Tools\mingw730_32
-        QTDIR: C:\Qt\5.12\mingw73_32
-        PYTHON_PATH: C:\Python37
-        CONFIGURATION: debug
-      - MINGW: C:\Qt\Tools\mingw730_32
         QTDIR: C:\Qt\5.12\mingw73_32
         PYTHON_PATH: C:\Python37
         CONFIGURATION: release
@@ -44,6 +36,7 @@ environment:
 #  - '%BUILD_DIR% -> **\*.pr?, appveyor.yml'
 
 init:
+  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
   - git config --global core.symlinks true
   - git config --global core.autocrlf true
   - if "x%appveyor_pull_request_number%" NEQ "x" set APPVEYOR_CACHE_SKIP_SAVE=true
