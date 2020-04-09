@@ -41,7 +41,7 @@ environment:
         CONFIGURATION: release
 
 #cache:
-#  - '%BUILD_DIR% -> **\*.pr?, appveyor.yml'
+#  - '%BUILD_DIR% -> **\*.pr?, appvadeyor.yml'
 
 init:
   - git config --global core.symlinks true
