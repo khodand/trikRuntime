@@ -66,6 +66,7 @@ build_script:
   - mingw32-make -j2 all
 
 test_script:
+  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1')
   - cd %BUILD_DIR%
   - cd bin\x86-%CONFIGURATION%
   - set TRIK_PYTHONPATH=%PYTHON_PATH%\Lib
