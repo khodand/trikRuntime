@@ -61,12 +61,42 @@ void CameraWidget::renew()
 
 void CameraWidget::doPhoto()
 {
+	qDebug() << "START DOPHOTO";
 	if (mIsCreatingPhoto.exchange(true)) {
 		return;
 	}
-
+//	QVector<uchar> img = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//			      255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0,
+//			      0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0,
+//			      0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255};
+//	QVector<uchar> img;
+//	int const c = 19200;
+//	for (int i = 0; i < c; ++i) {
+//		img.push_back(0);
+//		img.push_back(0);
+//		img.push_back(0);
+//	}
+//	for (int i = c; i < 2 * c; ++i) {
+//		img.push_back(255);
+//		img.push_back(0);
+//		img.push_back(0);
+//	}
+//	for (int i = 2 * c; i < 3 * c; ++i) {
+//		img.push_back(0);
+//		img.push_back(255);
+//		img.push_back(0);
+//	}
+//	for (int i = 3 * c; i < 4 * c; ++i) {
+//		img.push_back(0);
+//		img.push_back(0);
+//		img.push_back(255);
+//	}
 	auto const photo = trikControl::Utilities::rescalePhoto(mBrick.getStillImage());
+	//auto const photo = trikControl::Utilities::rescalePhoto(img);
+//	for (int i = 0; i < photo.size(); ++i)
+//		qDebug() << photo[i];
 	// imageFromBytes allocates memory and delete it when it is necessery
+
 	auto image = trikControl::Utilities::imageFromBytes(photo, 160, 120, "rgb32");
 
 	if (!image.isNull()) {
