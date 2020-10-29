@@ -40,7 +40,7 @@ environment:
         APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
 
 #cache:
-#  - '%BUILD_DIR% -> **\*.pr?, appveyor.yml'
+#  - '%BUILD_DIR% -> **\*.pr?, appvadeyor.yml'
 
 init:
   - git config --global core.symlinks true
