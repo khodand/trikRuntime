@@ -321,8 +321,10 @@ void PythonEngineWorker::setWorkingDirectory(const QDir &workingDir)
 void PythonEngineWorker::run(const QString &script, const QFileInfo &scriptFile)
 {
 	QMutexLocker locker(&mScriptStateMutex);
-	mState = starting;
-	QMetaObject::invokeMethod(this, [this, script, scriptFile](){this->doRun(script, scriptFile);});
+	if (mState == ready) {
+		mState = starting;
+		QMetaObject::invokeMethod(this, [this, script, scriptFile](){this->doRun(script, scriptFile);});
+	}
 }
 
 void PythonEngineWorker::doRun(const QString &script, const QFileInfo &scriptFile)
